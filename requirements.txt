@@ -1,0 +1,8 @@
+pymupdf
+python-docx
+openpyxl
+python-pptx
+beautifulsoup4
+lxml
+httpx
+pillow

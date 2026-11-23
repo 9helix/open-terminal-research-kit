@@ -1,0 +1,30 @@
+# Recommended: Open Terminal with the research toolkit baked in and a persistent volume.
+# Build + run:  docker compose up -d --build
+# Keep the same API key and port as your current container so the Open WebUI connection needs no change.
+services:
+  open-terminal:
+    build:
+      context: .
+      args:
+        RUN_USER: user          # verify: docker inspect --format '{{.Config.User}}' ghcr.io/open-webui/open-terminal:latest
+        OCR_LANGS: "eng hrv"
+        READER: auto            # auto | off: Jina Reader fallback for JavaScript-heavy web pages
+        INSTALL_FLAGS: ""       # extra install.sh flags, e.g. "--no-office --no-browser"
+    image: open-terminal-research
+    container_name: open-terminal
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - OPEN_TERMINAL_API_KEY=${OPEN_TERMINAL_API_KEY:?set it in .env or the shell}
+      - JINA_API_KEY=${JINA_API_KEY:-}      # optional: higher Jina Reader rate limit (free key from jina.ai)
+    volumes:
+      - open-terminal:/home/user
+    deploy:
+      resources:
+        limits:
+          memory: 4G
+          cpus: "2.0"
+
+volumes:
+  open-terminal:
