@@ -12,7 +12,7 @@ Terminal commands are described in the skill `research-terminal-tools`; load it 
 - Do not invent values. If the file depends on outside facts (datasheet figures, rules, prices), look up only those, or mark them as unverified in the file and in your answer. If it depends on reading several sources, also load `research-workflow`.
 
 ## 2. Build
-- Write a Python script to `~/work/build_<name>.py`, run it, and write the output to `~/work/out/`. Do not paste file contents into the chat unless asked.
+- Write a Python script to `~/work/scratch/build_<name>.py`, run it, and write the output to `~/work/out/`. If you will run the same kind of build more than once, make it one parameterized script in `~/work/tools/` instead. Put only finished deliverables in `out/`. Do not paste file contents into the chat unless asked.
 - Libraries: python-docx, openpyxl, python-pptx, lxml, pymupdf, pillow. Install anything else with `pip install --user --break-system-packages <pkg>`.
 - Spreadsheets: use formulas, not pasted results, when the user will edit the model.
 - Diagrams (SVG, BPMN, draw.io and other XML formats): keep a machine-readable description next to the drawing (nodes and edges, or a component list and netlist). Generate coordinates from that description in code, never by hand.

@@ -74,6 +74,7 @@ fi
 say "Installing tools to /usr/local/bin"
 $SUDO install -d /usr/local/lib/research_kit /usr/local/etc
 $SUDO install -m 644 "$KIT_DIR"/lib/*.py /usr/local/lib/research_kit/
+$SUDO install -m 644 "$KIT_DIR/WORK.md" /usr/local/lib/research_kit/WORK.md
 for f in "$KIT_DIR"/bin/*.py; do
   n="$(basename "$f" .py)"
   $SUDO install -m 755 "$f" "/usr/local/bin/$n"
@@ -85,8 +86,12 @@ printf 'OCR_LANGS=%s\nREADER=%s\n' "$OCR_JOINED" "$READER" | $SUDO tee /usr/loca
 say "Self-test"
 if research_selftest; then
   echo
-  echo "Done. Tools: fetch_doc, doc_search, render_page, check_output, research_selftest"
-  echo "Workspace: \$HOME/work/{sources,out,renders}  (created on first use)"
+  echo "Done. Tools: fetch_doc, doc_search, render_page, check_output, research_init, research_selftest"
+  if [ "$(id -u)" -ne 0 ]; then
+    research_init
+  else
+    echo "Workspace: not created (running as root). Run once as the terminal's own user:  docker exec <container> research_init"
+  fi
 else
   echo "Self-test reported failures: see output above." >&2
   exit 1

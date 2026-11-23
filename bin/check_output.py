@@ -8,7 +8,7 @@
   also: .pdf .xml .svg .html .json .csv .md .txt
 
 Prints PASS / WARN / FAIL lines; exit code 1 on FAIL. WARN means "look at it", not "broken".
---render writes PNG pages to $RESEARCH_HOME/renders/ so they can be viewed or OCR'd with render_page.
+--render writes PNG pages to $RESEARCH_HOME/scratch/renders/ so they can be viewed or OCR'd with render_page.
 """
 import argparse
 import csv
@@ -20,7 +20,7 @@ import tempfile
 from pathlib import Path
 
 sys.path[:0] = [str(Path(__file__).resolve().parent.parent / "lib"), "/usr/local/lib/research_kit"]
-from research_common import RENDERS, browser_label, have, launch_chromium, slugify  # noqa: E402
+from research_common import RENDERS, browser_label, ensure_workspace, have, launch_chromium, slugify  # noqa: E402
 
 PLACEHOLDER = re.compile(r"(lorem ipsum|\bTODO\b|\bTBD\b|\bXXX+\b|\[(?:insert|placeholder|your)[^\]]*\]|\{\{[^}]+\}\}|<<[^>]+>>)", re.I)
 XL_ERRORS = ("#REF!", "#DIV/0!", "#NAME?", "#VALUE!", "#N/A", "#NULL!", "#NUM!")
@@ -352,6 +352,7 @@ def main():
     ap.add_argument("files", nargs="+")
     ap.add_argument("--render", action="store_true", help="also write PNG renders of pages/slides/screenshots")
     a = ap.parse_args()
+    ensure_workspace()
     exit_code = 0
     for f in a.files:
         p = Path(f).expanduser()

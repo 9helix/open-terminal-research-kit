@@ -8,7 +8,7 @@
   render_page NAME --page 7 --ocr            also print OCR text of the render
   render_page https://example.org/x --page 1 screenshot of a web page (needs playwright; page is ignored)
 
-PNGs go to $RESEARCH_HOME/renders/. They are for visual checks of layout, tables and scanned content; if the
+PNGs go to $RESEARCH_HOME/scratch/renders/. They are for visual checks of layout, tables and scanned content; if the
 model cannot see images, use --ocr or check_output instead.
 """
 import argparse
@@ -20,7 +20,7 @@ import tempfile
 from pathlib import Path
 
 sys.path[:0] = [str(Path(__file__).resolve().parent.parent / "lib"), "/usr/local/lib/research_kit"]
-from research_common import RENDERS, doc_dir, have, launch_chromium, ocr_langs, slugify  # noqa: E402
+from research_common import RENDERS, doc_dir, ensure_workspace, have, launch_chromium, ocr_langs, slugify  # noqa: E402
 
 
 def to_pdf(path, workdir):
@@ -89,6 +89,7 @@ def main():
     ap.add_argument("--out", help="output directory (default renders dir)")
     a = ap.parse_args()
 
+    ensure_workspace()
     out_dir = Path(a.out) if a.out else RENDERS
     out_dir.mkdir(parents=True, exist_ok=True)
     t = a.target

@@ -276,6 +276,42 @@ def main():
     rc, out = run("check_output", str(samples / "overlap.bpmn"), env=env)
     check("check_output: flags partially overlapping diagram shapes", "overlap" in out, out)
 
+    home = Path(env["RESEARCH_HOME"])
+    check("workspace: kit tools create the folders and README.md on first use",
+          all((home / d).is_dir() for d in ("scratch", "scratch/renders", "tools", "state", "state/ledgers", "out", "sources"))
+          and (home / "README.md").exists() and "scratch/" in (home / "README.md").read_text(), str(sorted(p.name for p in home.iterdir())))
+    check("workspace: page renders go to scratch/renders", any((home / "scratch" / "renders").glob("*.png")), str(list((home / "scratch").iterdir())))
+    init_env = dict(env, RESEARCH_HOME=str(work / "init-home"))
+    rc, out = run("research_init", env=init_env)
+    ih = work / "init-home"
+    check("research_init: creates the workspace and README.md", rc == 0 and (ih / "README.md").exists() and (ih / "state" / "ledgers").is_dir(), out)
+    (ih / "README.md").write_text("# my own conventions\n")
+    rc, out = run("research_init", env=init_env)
+    check("research_init: rerun keeps an edited README.md", rc == 0 and "already complete" in out and (ih / "README.md").read_text() == "# my own conventions\n", out)
+    rc, out = run("research_init", "--reset-readme", env=init_env)
+    check("research_init --reset-readme restores the template and keeps a backup",
+          rc == 0 and "scratch/" in (ih / "README.md").read_text() and any(ih.glob("README.md.bak-*")), out)
+    tmpl = HERE.parent / "WORK.md"
+    if not tmpl.exists():
+        tmpl = Path("/usr/local/lib/research_kit/WORK.md")
+    check("workspace: README.md content comes from WORK.md", tmpl.exists() and (home / "README.md").read_text() == tmpl.read_text(), str(tmpl))
+    custom = work / "custom-work.md"
+    custom.write_text("# custom template marker\n")
+    rc, out = run("research_init", env=dict(env, RESEARCH_HOME=str(work / "custom-home"), RESEARCH_WORK_TEMPLATE=str(custom)))
+    check("research_init: RESEARCH_WORK_TEMPLATE overrides the template",
+          rc == 0 and (work / "custom-home" / "README.md").read_text() == "# custom template marker\n", out)
+    rc, out = run("research_init", env=dict(env, RESEARCH_HOME=str(work / "no-template-home"), RESEARCH_WORK_TEMPLATE=str(work / "missing.md")))
+    check("research_init: missing template gives a clear error", rc == 1 and "WORK.md" in out and "not found" in out and "Traceback" not in out, out)
+    ro = work / "readonly-home"
+    ro.mkdir()
+    ro.chmod(0o500)
+    rc, out = run("research_init", env=dict(env, RESEARCH_HOME=str(ro / "work")))
+    if os.geteuid() == 0:
+        print("SKIP  research_init failure test (running as root ignores permissions)")
+    else:
+        check("research_init: unwritable location fails with a clear message", rc == 1 and "could not create" in out and "Traceback" not in out, out)
+    ro.chmod(0o700)
+
     srv.shutdown()
     rsrv.shutdown()
     shutil.rmtree(work, ignore_errors=True)

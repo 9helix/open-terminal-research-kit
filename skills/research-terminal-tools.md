@@ -5,7 +5,7 @@ description: Reference for the document tools installed in the terminal (fetch_d
 
 # Terminal research tools
 
-Use the terminal tool to run these commands. Workspace: `~/work/` with `sources/` (extracted documents), `out/` (files for the user), `renders/` (page images). Everything is plain text output; nothing prints a whole document.
+Use the terminal tool to run these commands. Read `~/work/README.md` before your first command: it defines the workspace (`scratch/` for one-off scripts and page renders, `tools/` for reusable scripts, `state/` for notes that must survive, `out/` for files for the user, `sources/` for extracted documents). Everything is plain text output; nothing prints a whole document.
 
 ## fetch_doc: get a document into the workspace
 ```
@@ -54,7 +54,7 @@ check_output ~/work/out/file.docx [--render]
 ```
 - `.docx` structure, placeholders, rendered page count, blank pages. `.xlsx` recalculated and scanned for `#REF!`, `#DIV/0!`, `#NAME?`, `#VALUE!`, `#N/A`. `.pptx` off-slide shapes, overlapping text, empty slides. `.pdf`, `.html`, `.svg`, `.xml`/`.bpmn` (well-formedness, duplicate ids, overlapping diagram shapes), `.json`, `.csv`.
 - Exit code 1 and `FAIL` lines mean the file is broken; fix and rerun. `WARN` lines mean look closer.
-- `--render` writes PNGs to `~/work/renders/` for visual review.
+- `--render` writes PNGs to `~/work/scratch/renders/` for visual review.
 
 ## Building files
 For building files, load the skill `build-files`.
@@ -62,5 +62,5 @@ For building files, load the skill `build-files`.
 ## Practical rules
 - The container may be recreated, which wipes `~/work` if no persistent volume is attached: tell the user to download important files promptly.
 - Never dump a whole document with `cat`. Use `doc_search --at` / `--section`.
-- Keep scripts and notes in `~/work/`, not in `sources/`.
+- Keep scripts and notes out of `sources/`: one-off scripts go in `~/work/scratch/`, reusable ones in `~/work/tools/`, notes that must survive in `~/work/state/`.
 - If a command is missing (`command not found`), the toolkit is not installed in this container: tell the user to run the install step instead of improvising.

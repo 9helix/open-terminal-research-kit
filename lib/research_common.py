@@ -26,7 +26,48 @@ CONF = _read_conf()
 HOME = Path(os.environ.get("RESEARCH_HOME") or (Path.home() / "work"))
 SOURCES = HOME / "sources"
 OUT = HOME / "out"
-RENDERS = HOME / "renders"
+RENDERS = HOME / "scratch" / "renders"
+
+WORKSPACE_DIRS = ("scratch", "scratch/renders", "tools", "state", "state/ledgers", "out", "sources")
+
+
+def work_template_path():
+    """The WORK.md template: RESEARCH_WORK_TEMPLATE if set, else WORK.md next to the installed library or at the repo root."""
+    forced = os.environ.get("RESEARCH_WORK_TEMPLATE")
+    if forced:
+        p = Path(forced).expanduser()
+        return p if p.is_file() else None
+    here = Path(__file__).resolve().parent
+    for p in (here / "WORK.md", here.parent / "WORK.md"):
+        if p.is_file():
+            return p
+    return None
+
+
+def work_template_text():
+    p = work_template_path()
+    return p.read_text(encoding="utf-8") if p else None
+
+
+def ensure_workspace():
+    """Create the workspace folders and README.md if missing; never overwrites. Returns the paths it created."""
+    created = []
+    try:
+        HOME.mkdir(parents=True, exist_ok=True)
+        for d in WORKSPACE_DIRS:
+            p = HOME / d
+            if not p.is_dir():
+                p.mkdir(parents=True, exist_ok=True)
+                created.append(str(p))
+        readme = HOME / "README.md"
+        if not readme.exists():
+            text = work_template_text()
+            if text is not None:
+                readme.write_text(text, encoding="utf-8")
+                created.append(str(readme))
+    except OSError:
+        pass
+    return created
 
 # Playwright's own Chromium (only downloaded by install.sh when the system has none) lives here.
 if Path("/opt/ms-playwright").exists():

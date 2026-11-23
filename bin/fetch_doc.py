@@ -31,7 +31,7 @@ from pathlib import Path
 from urllib.parse import unquote, urljoin, urlparse
 
 sys.path[:0] = [str(Path(__file__).resolve().parent.parent / "lib"), "/usr/local/lib/research_kit"]
-from research_common import CONF, SOURCES, doc_dir, have, norm, ocr_langs, slugify  # noqa: E402
+from research_common import CONF, SOURCES, doc_dir, ensure_workspace, have, norm, ocr_langs, slugify  # noqa: E402
 
 UAS = [
     "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36",
@@ -761,6 +761,7 @@ def main():
     a = ap.parse_args()
     if a.name and len(a.sources) > 1:
         ap.error("--name works with a single source")
+    ensure_workspace()
     failed = 0
     for s in a.sources:
         name, errs = process(s, a)

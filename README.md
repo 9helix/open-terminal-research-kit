@@ -14,6 +14,7 @@ It is task-agnostic: nothing in it is specific to one subject, language or docum
 | `doc_search` | Search and read extracted documents without loading them into the model's context: term and regex search (accent- and case-insensitive), outline, read page/sheet/slide N, read a section by heading. |
 | `render_page` | Turn a page, slide or sheet (or a web page) into a PNG, optionally cropped and OCR'd. For checking tables, figures and scanned content. |
 | `check_output` | Validate generated files: DOCX, XLSX (recalculated with LibreOffice, scanned for formula errors), PPTX, PDF, HTML, SVG, XML/BPMN, JSON, CSV. Prints PASS / WARN / FAIL. |
+| `research_init` | Create the `~/work` workspace folders and its `README.md` (safe to rerun, never overwrites an existing README). |
 | `research_selftest` | End-to-end self-test of all of the above in a throwaway workspace. |
 
 **Skills** (Markdown files you import into Open WebUI):
@@ -54,7 +55,7 @@ docker cp ./research-kit open-terminal:/tmp/research-kit
 docker exec -it open-terminal bash -c 'cd /tmp/research-kit && chmod +x install.sh bin/*.py && ./install.sh'
 ```
 
-If this fails with a sudo error, add `-u root` after `exec`.
+If this fails with a sudo error, add `-u root` after `exec`. When the installer runs as the terminal's own user it also runs `research_init` at the end; when it runs as root it does not (root's home is not the terminal user's), so run `docker exec open-terminal research_init` afterwards.
 
 ### 2b. Option B: build an image with the kit and a persistent volume (recommended)
 
@@ -65,6 +66,7 @@ The kit is installed at build time, and `~/work` (downloaded sources, generated 
 3. Remove the old container if it uses the same name or port (`docker stop open-terminal && docker rm open-terminal`), then:
    ```bash
    docker compose up -d --build
+   docker exec open-terminal research_init     # once: creates ~/work and its README.md on the volume
    ```
 
 The service keeps port 8000, so an existing Open WebUI connection to the terminal keeps working if the host, port and key are unchanged.
@@ -96,11 +98,12 @@ By default the installer reuses a Chromium or Chrome already on the machine (`ch
 
 ```bash
 curl -s http://<terminal-host>:8000/health                # expect a JSON status response (see the Open Terminal docs if your version differs)
+docker exec open-terminal research_init                    # creates ~/work and its README.md (safe to rerun)
 docker exec open-terminal research_selftest               # expect "N/N checks passed"
 docker exec open-terminal bash -c 'fetch_doc --help | head -3; doc_search --list'
 ```
 
-All 43 checks run when LibreOffice and a browser are installed; with `--no-office` or `--no-browser` fewer run and some are skipped. A failure in the `render_page` or `check_output` Office checks usually means LibreOffice is missing or short of memory.
+All 51 checks run when LibreOffice and a browser are installed; with `--no-office` or `--no-browser` fewer run and some are skipped. A failure in the `render_page` or `check_output` Office checks usually means LibreOffice is missing or short of memory.
 
 ## Open WebUI setup
 
@@ -113,10 +116,10 @@ Menu names vary between Open WebUI versions; search the admin settings for the q
 5. **Optional system prompt paragraph**, for models that have the skills attached:
 
    ```
-   Source-based work: If a `research-workflow` skill is available to you, load it with view_skill when the answer depends on reading, comparing or verifying documents or sources (reports, regulations, contracts, papers, datasets), whether attached, linked or to be found. Do not load it for everyday questions that a quick web search answers (prices, product advice, schedules, opening hours), or when the task needs no outside facts. If a `build-files` skill is available, load it when the task produces a file (DOCX, XLSX, PPTX, PDF, diagrams, spreadsheets). If a terminal is connected, use it for downloading, reading, computing and building files instead of reading long documents in the conversation.
+   Source-based work: If a `research-workflow` skill is available to you, load it with view_skill when the answer depends on reading, comparing or verifying documents or sources (reports, regulations, contracts, papers, datasets), whether attached, linked or to be found. Do not load it for everyday questions that a quick web search answers (prices, product advice, schedules, opening hours), or when the task needs no outside facts. If a `build-files` skill is available, load it when the task produces a file (DOCX, XLSX, PPTX, PDF, diagrams, spreadsheets). If a terminal is connected, read ~/work/README.md before your first command there and follow it.
    ```
 
-   The paragraph is conditional on the skill being available, so it is harmless in a shared prompt used with models that don't have it.
+   The paragraph is conditional on the skill being available, so it is harmless in a shared prompt used with models that don't have it. The guidance on how to use the terminal (what goes where, using the terminal instead of reading long documents in chat) lives in `~/work/README.md`, so it costs nothing in chats without a terminal.
 
 Then run the smoke test below.
 
@@ -126,13 +129,28 @@ Ask: "Use the terminal to run `doc_search --list` and `fetch_doc --help` and tel
 
 Then work through `acceptance-tests.md`.
 
+## Workspace
+
+The terminal workspace is `~/work` (set `RESEARCH_HOME` to move it). `research_init` creates it and writes a `README.md` there that the model is told to read before its first terminal command. The text of that README comes from `WORK.md` in the kit (installed next to the library), so you can edit `WORK.md` before building or installing to change the default, or point `RESEARCH_WORK_TEMPLATE` at your own file. The kit's tools also create the workspace on first use.
+
+| Folder | Use |
+|---|---|
+| `scratch/` | One-off scripts, temporary files, experiments, page renders (`scratch/renders/`). Disposable: the model is told to assume it may be wiped. Default home when unsure. |
+| `tools/` | Parameterized scripts meant to run more than once. A second script of the same kind in one task becomes one tool here. |
+| `state/` | Notes that should survive between sessions. `state/ledgers/` holds saved research ledgers: the model keeps a working ledger in `scratch/` and saves it here, with a descriptive name and date, only when it will help in future. |
+| `out/` | Finished deliverables you download. |
+| `sources/` | Documents fetched by `fetch_doc`; treat as a cache. |
+
+Nothing in the kit deletes or wipes `scratch/`; "may be wiped" is guidance to the model, not a mechanism. `research_init` never overwrites an existing `README.md`, so you can add your own conventions to it, but kit updates will not change a README that already exists: run `research_init --reset-readme` to replace it with the current template (the old one is kept as `README.md.bak-<time>`).
+
 ## Configuration
 
 Environment variables (set on the container, for example in `docker-compose.yml`):
 
 | Variable | Effect |
 |---|---|
-| `RESEARCH_HOME` | Workspace root (default `~/work`, with `sources/`, `out/`, `renders/`). |
+| `RESEARCH_HOME` | Workspace root (default `~/work`; see "Workspace"). |
+| `RESEARCH_WORK_TEMPLATE` | Path to a file to use instead of `WORK.md` as the template for `~/work/README.md`. |
 | `RESEARCH_OCR_LANGS` | Default OCR languages, e.g. `eng+deu` (default from the install, `eng+hrv`). |
 | `RESEARCH_READER` | `auto` / `off` / `force`: Jina Reader fallback mode. |
 | `RESEARCH_READER_URL` | Base URL of an alternative or self-hosted reader. |
@@ -172,7 +190,7 @@ The installer also writes `/usr/local/etc/research-kit.conf` (`OCR_LANGS`, `READ
 - DOCX extraction does not read headers, footers, footnotes, text boxes or comments, and warns about tracked changes. Hidden XLSX sheets are marked.
 - `check_output`'s geometry check applies to XML diagram files with `Bounds` elements (such as BPMN) and only warns. SVG gets well-formedness, duplicate-id and render checks; overlapping shapes are not flagged. A checker cannot judge whether a diagram or circuit is correct.
 - Everyone who can use one Open Terminal connection shares the same `~/work`.
-- Tested: the tools and installer pass the 43-check self-test in a Debian-based test environment (with the Jina Reader tests run against a local mock, not the real service). Not verified: the Docker build, and the kit against the current Open Terminal image; check step 1 first.
+- Tested: the tools and installer pass the 51-check self-test in a Debian-based test environment (with the Jina Reader tests run against a local mock, not the real service). Not verified: the Docker build, and the kit against the current Open Terminal image; check step 1 first.
 
 ## Security notes
 
@@ -183,9 +201,10 @@ The installer also writes `/usr/local/etc/research-kit.conf` (`OCR_LANGS`, `READ
 
 ```
 research-kit/
-├── bin/            fetch_doc.py, doc_search.py, render_page.py, check_output.py, research_selftest.py
+├── bin/            fetch_doc.py, doc_search.py, render_page.py, check_output.py, research_init.py, research_selftest.py
 ├── lib/            research_common.py
 ├── skills/         research-workflow.md, research-terminal-tools.md, build-files.md
+├── WORK.md         template for the workspace README (~/work/README.md)
 ├── install.sh      installer (run inside the container)
 ├── requirements.txt
 ├── Dockerfile, docker-compose.yml, .env.example

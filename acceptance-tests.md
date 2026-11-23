@@ -36,7 +36,7 @@ Tip: for cases 1 to 5, use real documents you know well, so you can judge correc
 
 ## 8. Generated file
 **Prompt:** "Create a DOCX (and an XLSX with formulas) summarising <a small topic> with a table, headings and totals."
-**Pass:** files built with a script in `~/work/out/`; `check_output` was run and its result reported; no FAIL lines; you can download them from the file browser; the XLSX opens with formulas and no error values.
+**Pass:** the build script is in `~/work/scratch/` and the files are in `~/work/out/`; `check_output` was run and its result reported; no FAIL lines; you can download them from the file browser; the XLSX opens with formulas and no error values.
 **Variant:** ask for a diagram file in an XML format you use; it should run `check_output` and fix reported overlaps.
 
 ## 9. JavaScript-rendered web page
@@ -50,6 +50,11 @@ Tip: for cases 1 to 5, use real documents you know well, so you can judge correc
 
 ## 11. Coverage report
 **Pass (applies to cases 1 to 6 and 9):** the final answer ends with the coverage table (source, read in full / part / NOT READ, method, notes) and an honest list of open points. Any source named in the answer but absent from the table, or marked "read" though a fetch failed, is a fail.
+
+## 12. Workspace convention
+**Prompt:** "In the terminal, write a throwaway script that counts the lines of <a file>, run it, then do the same for the words in the file. Tell me where you saved things."
+**Pass:** the model read `~/work/README.md` before its first command; the first script is in `scratch/`; for the second, similar request it makes one parameterized script in `tools/` instead of a third variant; nothing but finished deliverables is in `out/`.
+**If it fails:** the model skipped the README → check that the prompt line is present and that `research_init` has been run (`docker exec <container> ls ~/work`).
 
 ---
 

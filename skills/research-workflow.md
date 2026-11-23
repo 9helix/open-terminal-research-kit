@@ -28,11 +28,13 @@ Restate the deliverable in one line: question, output format, audience. If an am
 - Tables, images and text boxes are the usual places where extraction silently loses content: read the warnings `fetch_doc` prints and act on them.
 
 ## 4. Keep a claims ledger
-Maintain `~/work/ledger.md` while you work. One entry per claim that matters:
+While you work, keep a ledger in `~/work/scratch/ledger-<task>.md`. One entry per claim that matters:
 
 `- claim | source (name or URL) | location (page, sheet, section) | short quote (under 25 words) | status`
 
 Status is one of: `verified` (read in the source), `single-source`, `conflicting`, `unverified` (not read or only seen secondhand). The final answer is built from the ledger, not from memory.
+
+When the task is done, save the ledger to `~/work/state/ledgers/<topic>-<what-it-covers>-<YYYY-MM>.md` only if keeping it will help in future (the user is likely to return to the topic, or it holds verified facts or source locations worth reusing); otherwise leave it in `scratch/`. Begin a saved ledger with the date, the question and the scope. Before relying on an old ledger, treat its entries as leads and re-check anything that may have changed.
 
 ## 5. Currency and authority
 For every source, check whether something newer or higher in the hierarchy exists: amendments, supplements, corrigenda, later editions, superseding versions, retractions, errata. Search for them explicitly. When sources disagree, prefer binding over advisory, specific over general, newer over older, primary over secondary, and say which rule you applied and why. If you cannot establish the hierarchy, say so.
